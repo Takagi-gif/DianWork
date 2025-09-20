@@ -1,25 +1,21 @@
 #include <stdio.h>
 #include <string.h>
-
 #include <ctype.h>
-
-// 判断一行是否仅包含空白字符（空行过滤）
+//任务2
 int is_blank_line(const char *line) {
 	for (int i = 0; line[i]; ++i) {
 		if (!isspace((unsigned char)line[i])) return 0;
 	}
 	return 1;
-}
+} // 判断一行是否仅包含空白字符（空行过滤）
 
-// 去除字符串末尾的空白字符（行尾空格过滤）
 void rtrim(char *line) {
 	int len = strlen(line);
 	while (len > 0 && isspace((unsigned char)line[len-1])) {
 		line[--len] = '\0';
 	}
-}
+}// 去除字符串末尾的空白字符（行尾空格过滤）
 
-// 任务2：预处理Makefile，过滤空行、去除注释和行尾空格
 // verbose=1时输出处理结果到Minimake_cleared.mk
 void preprocess_makefile(int verbose) {
 	FILE *fin = fopen("./Makefile", "r"); // 打开当前目录下Makefile
@@ -42,7 +38,38 @@ void preprocess_makefile(int verbose) {
 	if (fout) fclose(fout);
 	fclose(fin);
 }
-
+// 任务3
+void syntax_check() {
+	FILE *fin = fopen("Minimake_cleared.mk", "r"); // 读取预处理后的文件
+	if (!fin) return;
+	char line[1024];
+	int lineno = 0;
+	int expect_target = 1; // 1: 期待目标行, 0: 期待命令行
+	while (fgets(line, sizeof(line), fin)) {
+		++lineno;
+		rtrim(line);
+		if (is_blank_line(line)) continue;
+		if (expect_target) {
+			// 检查目标行是否有冒号
+			if (!strchr(line, ':')) {
+				printf("Line%d: Missing colon in target definition\n", lineno);
+				expect_target = 1; // 继续期待目标行
+			} else {
+				expect_target = 0; // 下一个应为命令行
+			}
+		} else {
+			// 检查命令行是否以Tab开头
+			if (line[0] != '\t') {
+				printf("Line%d: Command must start with Tab\n", lineno);
+				expect_target = 1; // 错误后继续期待目标行
+			} else {
+				expect_target = 1; // 下一个应为目标行
+			}
+		}
+	}
+	fclose(fin);
+}
+//任务1
 void print_usage() {
 	printf("Usage: Minimake [--help]\n");
 	printf("  --help        Show this help message\n");
@@ -68,7 +95,7 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}
 	}
-	// 任务2：预处理Makefile
 	preprocess_makefile(verbose);
+	syntax_check(); 
 	return 0;
 }
