@@ -124,8 +124,38 @@ void check_dependencies() {
     }
 }
 
-int main() {
-    parse_makefile("Makefile");
+int main(int argc, char *argv[]) {
+    const char *filename = "Makefile";
+    const char *target_name = NULL;
+    if (argc > 1) {
+        if (argc == 2) {
+            target_name = argv[1];
+        } else if (argc >= 3) {
+            filename = argv[1];
+            target_name = argv[2];
+        }
+    }
+    parse_makefile(filename);
     check_dependencies();
+    // 任务2：执行目标命令
+    int target_idx = 0;
+    if (target_name) {
+        target_idx = find_target(target_name);
+        if (target_idx == -1) {
+            printf("Error: Target '%s' not found.\n", target_name);
+            return 1;
+        }
+    }
+    Rule *rule = &rules[target_idx];
+    printf("Building target: %s\n", rule->target);
+    for (int i = 0; i < rule->cmd_count; ++i) {
+        printf("Running: %s\n", rule->commands[i]);
+        int ret = system(rule->commands[i]);//执行命令
+        if (ret != 0) {
+            printf("Command failed: %s\n", rule->commands[i]);
+            return 1;
+        }
+    }
+    printf("Build finished.\n");
     return 0;
 }
