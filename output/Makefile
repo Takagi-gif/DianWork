@@ -1,2 +1,2 @@
-app main.c utils.c  # 目标和依赖之间缺少冒号
-    gcc -o app main.c utils.c
+app: main.c utils.c lib # `lib` 作为依赖，但未在 Makefile 中定义
+    gcc -o app main.c utils.c lib

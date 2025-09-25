@@ -129,7 +129,12 @@ int main(int argc, char *argv[]) {
     const char *target_name = NULL;
     if (argc > 1) {
         if (argc == 2) {
-            target_name = argv[1];
+            // 如果参数是Makefile路径
+            if (strstr(argv[1], ".mk") || strstr(argv[1], "Makefile")) {
+                filename = argv[1];
+            } else {
+                target_name = argv[1];
+            }
         } else if (argc >= 3) {
             filename = argv[1];
             target_name = argv[2];
@@ -142,15 +147,23 @@ int main(int argc, char *argv[]) {
     if (target_name) {
         target_idx = find_target(target_name);
         if (target_idx == -1) {
+            // 兼容依赖行有空格或注释的情况
+            for (int i = 0; i < rule_count; ++i) {
+                if (strstr(rules[i].target, target_name)) {
+                    target_idx = i;
+                    goto found;
+                }
+            }
             printf("Error: Target '%s' not found.\n", target_name);
             return 1;
         }
     }
+found:
     Rule *rule = &rules[target_idx];
     printf("Building target: %s\n", rule->target);
     for (int i = 0; i < rule->cmd_count; ++i) {
         printf("Running: %s\n", rule->commands[i]);
-        int ret = system(rule->commands[i]);//执行命令
+        int ret = system(rule->commands[i]);
         if (ret != 0) {
             printf("Command failed: %s\n", rule->commands[i]);
             return 1;
